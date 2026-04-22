@@ -232,3 +232,16 @@ function initSlider() {
 
 loadArticle();
 loadRelatedStories();
+
+(function initShareButtons() {
+  const pageUrl = encodeURIComponent(window.location.href);
+  const title = encodeURIComponent(document.title);
+
+  const fb = document.getElementById('share-facebook');
+  const li = document.getElementById('share-linkedin');
+  const wa = document.getElementById('share-whatsapp');
+
+  if (fb) fb.href = `https://www.facebook.com/sharer/sharer.php?u=${pageUrl}`;
+  if (li) li.href = `https://www.linkedin.com/sharing/share-offsite/?url=${pageUrl}`;
+  if (wa) wa.href = `https://api.whatsapp.com/send?text=${title}%20${pageUrl}`;
+})();
