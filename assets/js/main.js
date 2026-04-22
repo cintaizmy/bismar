@@ -332,3 +332,59 @@ function scrollNews(dir) {
   document.getElementById('newsTrack').style.transform =
     `translateX(-${newsIndex * getCardWidth()}px)`;
 }
+
+/* ══════════════════════════════════════════
+   NEWS — DYNAMIC LOAD FROM API
+══════════════════════════════════════════ */
+function escapeHTML(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+(async function loadNews() {
+  const track = document.getElementById('newsTrack');
+  if (!track) return;
+
+  const staticHTML = track.innerHTML;
+
+  track.innerHTML = Array.from({ length: 4 }, () =>
+    '<a class="news-card news-skeleton" aria-hidden="true" tabindex="-1"></a>'
+  ).join('');
+
+  try {
+    const res = await fetch('api/get-posts.php?status=published');
+    if (!res.ok) throw new Error();
+
+    const posts = await res.json();
+    if (!Array.isArray(posts) || posts.length === 0) throw new Error();
+
+    track.innerHTML = '';
+    posts.slice(0, 6).forEach(post => {
+      const date = post.created_at
+        ? new Date(post.created_at).toLocaleDateString('id-ID', {
+            day: 'numeric', month: 'short', year: 'numeric'
+          })
+        : '';
+      const a = document.createElement('a');
+      a.href      = `newsdetail.html?id=${encodeURIComponent(post.id)}`;
+      a.className = 'news-card';
+      a.innerHTML = `
+        <div class="news-img"></div>
+        <span class="news-tag">Berita</span>
+        <p class="news-title">${escapeHTML(post.judul || '')}</p>
+        <div class="news-meta">
+          <span>${escapeHTML(post.author || 'Tim Bismar')}</span>
+          <span class="news-dot">•</span>
+          <span>${escapeHTML(date)}</span>
+        </div>`;
+      track.appendChild(a);
+    });
+
+    newsIndex = 0;
+  } catch {
+    track.innerHTML = staticHTML;
+  }
+})();

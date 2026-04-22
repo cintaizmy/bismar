@@ -26,56 +26,72 @@
       </a>
     </div>
 
-    <!-- Badge -->
-    <span class="badge">Education News</span>
-
-    <!-- Title -->
-    <!-- [DINAMIS] id="article-title" ditambahkan -->
-    <h1 class="article-title" id="article-title">The Future of Digital Learning in 2024: Trends and Innovations</h1>
-
-    <!-- Meta -->
-    <!-- [DINAMIS] id="article-date" dan id="article-author" ditambahkan -->
-    <div class="article-meta">
-      <div class="meta-item">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-          <line x1="16" y1="2" x2="16" y2="6"/>
-          <line x1="8" y1="2" x2="8" y2="6"/>
-          <line x1="3" y1="10" x2="21" y2="10"/>
-        </svg>
-        <span id="article-date">October 24, 2023</span>
+    <!-- Loading state — ditampilkan saat artikel sedang difetch -->
+    <div id="article-loading" class="hidden">
+      <div class="article-loading-inner">
+        <div class="loading-spinner"></div>
+        <p class="loading-text">Memuat artikel...</p>
       </div>
     </div>
 
-    <!-- Hero Image -->
-    <!-- [DINAMIS] id="hero-container" ditambahkan, konten diganti oleh JS jika ada gambar -->
-    <div class="hero-illustration" id="hero-container">
-      <svg class="placeholder-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="3" y="3" width="18" height="18" rx="2"/>
-        <circle cx="8.5" cy="8.5" r="1.5"/>
-        <polyline points="21 15 16 10 5 21"/>
-      </svg>
-      <span class="placeholder-text">Image Placeholder</span>
+    <!-- Error state — ditampilkan jika fetch gagal -->
+    <div id="article-error" class="hidden">
+      <div class="article-error-box">
+        <svg class="error-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <p class="error-title">Artikel tidak dapat dimuat</p>
+        <p class="error-desc" id="error-message"></p>
+        <a href="index.html" class="error-back-btn">← Kembali ke Beranda</a>
+      </div>
     </div>
 
-    <!-- Article Body -->
-    <!-- [DINAMIS] id="article-body" ditambahkan, konten diganti oleh JS -->
-    <div class="article-body" id="article-body">
-      <p>
-        At Bismar Education, we believe that the integration of advanced technology in the classroom is no longer optional. This article explores how digital tools are reshaping the educational landscape, providing students with personalized learning experiences that were previously unimaginable.
-      </p>
-      <p>
-        From AI-driven tutoring to immersive VR history lessons, the boundaries of the traditional classroom are expanding. As we look toward 2024, the focus is shifting from simple digitization to creating truly adaptive learning environments that respond to individual student needs in real-time.
-      </p>
+    <!-- Article content — dibungkus agar bisa disembunyikan saat loading/error -->
+    <div id="article-content">
 
-      <p>
-        The most significant trend we are witnessing is the rise of hyper-personalization. Machine learning algorithms can now analyze how a student interacts with course material, identifying exactly where they struggle and automatically adjusting the difficulty or providing supplementary resources.
-      </p>
+      <span class="badge">Education News</span>
 
-      <p>
-        Furthermore, the collaborative nature of digital platforms allows for global classrooms where students in different continents can work together on projects, fostering cultural awareness and complex problem-solving skills necessary for the modern workforce.
-      </p>
-    </div>
+      <h1 class="article-title" id="article-title">The Future of Digital Learning in 2024: Trends and Innovations</h1>
+
+      <div class="article-meta">
+        <div class="meta-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          <span id="article-date">October 24, 2023</span>
+        </div>
+      </div>
+
+      <div class="hero-illustration" id="hero-container">
+        <svg class="placeholder-icon" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <circle cx="8.5" cy="8.5" r="1.5"/>
+          <polyline points="21 15 16 10 5 21"/>
+        </svg>
+        <span class="placeholder-text">Image Placeholder</span>
+      </div>
+
+      <div class="article-body" id="article-body">
+        <p>
+          At Bismar Education, we believe that the integration of advanced technology in the classroom is no longer optional. This article explores how digital tools are reshaping the educational landscape, providing students with personalized learning experiences that were previously unimaginable.
+        </p>
+        <p>
+          From AI-driven tutoring to immersive VR history lessons, the boundaries of the traditional classroom are expanding. As we look toward 2024, the focus is shifting from simple digitization to creating truly adaptive learning environments that respond to individual student needs in real-time.
+        </p>
+        <p>
+          The most significant trend we are witnessing is the rise of hyper-personalization. Machine learning algorithms can now analyze how a student interacts with course material, identifying exactly where they struggle and automatically adjusting the difficulty or providing supplementary resources.
+        </p>
+        <p>
+          Furthermore, the collaborative nature of digital platforms allows for global classrooms where students in different continents can work together on projects, fostering cultural awareness and complex problem-solving skills necessary for the modern workforce.
+        </p>
+      </div>
+
+    </div><!-- end #article-content -->
 
     <!-- Share -->
     <div class="share-section">

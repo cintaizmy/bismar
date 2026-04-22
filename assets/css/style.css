@@ -796,3 +796,18 @@ footer { background: var(--bg); }
   .popup-box { padding: 28px 24px; }
   .lb-close { top: -12px; right: -8px; }
 }
+
+/* ── News skeleton loading ──────────────────── */
+@keyframes shimmer {
+  from { background-position: -400px 0; }
+  to   { background-position:  400px 0; }
+}
+
+.news-skeleton {
+  pointer-events: none;
+  min-height: 220px;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.4s infinite linear;
+  border-radius: 12px;
+}

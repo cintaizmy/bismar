@@ -4,14 +4,94 @@ const UPLOADS_DIR   = 'uploads/';
 const urlParams = new URLSearchParams(window.location.search);
 const articleId = urlParams.get('id');
 
+/* ── HTML Sanitizer ─────────────────────────────────────────────────────────
+   Strips dangerous tags/attributes before inserting API content into the DOM.
+   Uses a whitelist approach — anything not explicitly allowed is removed.
+── */
+function sanitizeHTML(html) {
+  const SAFE_TAGS = new Set([
+    'p','br','b','strong','i','em','u','s',
+    'h2','h3','h4','ul','ol','li','blockquote',
+    'a','img','figure','figcaption','span'
+  ]);
+  const SAFE_ATTRS = {
+    a:   ['href', 'title'],
+    img: ['src', 'alt', 'width', 'height'],
+    '*': ['class']
+  };
+
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+
+  function walk(node) {
+    if (node.nodeType === Node.TEXT_NODE) return node.cloneNode();
+    if (node.nodeType !== Node.ELEMENT_NODE) return null;
+
+    const tag = node.tagName.toLowerCase();
+    if (!SAFE_TAGS.has(tag)) {
+      const frag = document.createDocumentFragment();
+      node.childNodes.forEach(c => { const n = walk(c); if (n) frag.appendChild(n); });
+      return frag;
+    }
+
+    const el      = document.createElement(tag);
+    const allowed = [...(SAFE_ATTRS[tag] || []), ...(SAFE_ATTRS['*'] || [])];
+
+    for (const { name, value } of node.attributes) {
+      if (!allowed.includes(name)) continue;
+      if ((name === 'href' || name === 'src') && /^javascript:/i.test(value.trim())) continue;
+      el.setAttribute(name, value);
+    }
+    if (tag === 'a') {
+      el.setAttribute('rel', 'noopener noreferrer');
+      if (!el.getAttribute('target')) el.setAttribute('target', '_blank');
+    }
+
+    node.childNodes.forEach(c => { const n = walk(c); if (n) el.appendChild(n); });
+    return el;
+  }
+
+  const out = document.createElement('div');
+  doc.body.childNodes.forEach(n => { const c = walk(n); if (c) out.appendChild(c); });
+  return out.innerHTML;
+}
+
+/* ── Escape helpers ─────────────────────────── */
+function escapeHTML(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/* ── Article UI state ───────────────────────── */
+function setArticleState(state, message) {
+  document.getElementById('article-loading').classList.toggle('hidden', state !== 'loading');
+  document.getElementById('article-error').classList.toggle('hidden',   state !== 'error');
+  document.getElementById('article-content').classList.toggle('hidden', state !== 'ready');
+
+  if (state === 'error' && message) {
+    document.getElementById('error-message').textContent = message;
+  }
+}
+
+/* ── Image helpers ──────────────────────────── */
 function resolveImage(post) {
-  if (post.gambar_url && post.gambar_url.trim() !== '') {
-    return post.gambar_url;
-  }
-  if (post.gambar && post.gambar.trim() !== '') {
-    return UPLOADS_DIR + post.gambar;
-  }
+  if (post.gambar_url?.trim()) return post.gambar_url;
+  if (post.gambar?.trim())     return UPLOADS_DIR + post.gambar;
   return null;
+}
+
+function renderHero(imageUrl) {
+  const container = document.getElementById('hero-container');
+  if (!container || !imageUrl) return;
+  const img = document.createElement('img');
+  img.src            = imageUrl;
+  img.alt            = 'Hero Image';
+  img.style.cssText  = 'width:100%;height:320px;object-fit:cover;border-radius:12px;';
+  img.onerror        = () => {};
+  container.innerHTML = '';
+  container.appendChild(img);
 }
 
 function placeholderThumb() {
@@ -26,27 +106,31 @@ function placeholderThumb() {
     </div>`;
 }
 
-function renderHero(imageUrl) {
-  const container = document.getElementById('hero-container');
-  if (!container || !imageUrl) return;
-  container.innerHTML = `
-    <img
-      src="${imageUrl}"
-      alt="Hero Image"
-      style="width:100%;height:320px;object-fit:cover;border-radius:12px;"
-      onerror="this.outerHTML='<svg class=\'placeholder-icon\' width=\'48\' height=\'48\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'1.5\'><rect x=\'3\' y=\'3\' width=\'18\' height=\'18\' rx=\'2\'/><circle cx=\'8.5\' cy=\'8.5\' r=\'1.5\'/><polyline points=\'21 15 16 10 5 21\'/></svg><span class=\'placeholder-text\'>Image Placeholder</span>'"
-    />`;
-}
-
+/* ── Load article ───────────────────────────── */
 async function loadArticle() {
   if (!articleId) return;
 
-  try {
-    const res  = await fetch(`${GET_POSTS_URL}?id=${encodeURIComponent(articleId)}`);
-    const data = await res.json();
+  setArticleState('loading');
 
+  try {
+    const res = await fetch(`${GET_POSTS_URL}?id=${encodeURIComponent(articleId)}`);
+
+    if (res.status === 404) {
+      setArticleState('error', 'Artikel tidak ditemukan.');
+      return;
+    }
+    if (!res.ok) {
+      setArticleState('error', 'Terjadi kesalahan server. Silakan coba lagi nanti.');
+      return;
+    }
+
+    const data = await res.json();
     const post = Array.isArray(data) ? data[0] : data;
-    if (!post) return;
+
+    if (!post) {
+      setArticleState('error', 'Artikel tidak ditemukan.');
+      return;
+    }
 
     if (post.judul) document.title = post.judul + ' | Bismar Education';
 
@@ -67,48 +151,38 @@ async function loadArticle() {
     if (bodyEl && post.konten) {
       const isHTML = /<[a-z][\s\S]*>/i.test(post.konten);
       bodyEl.innerHTML = isHTML
-        ? post.konten
+        ? sanitizeHTML(post.konten)
         : '<p>' + post.konten.replace(/\n\n+/g, '</p><p>').replace(/\n/g, '<br>') + '</p>';
     }
 
     renderHero(resolveImage(post));
+    setArticleState('ready');
 
-  } catch (err) {
-    console.error('Gagal memuat artikel:', err);
+  } catch {
+    setArticleState('error', 'Koneksi gagal. Periksa jaringan internet kamu dan coba lagi.');
   }
 }
 
+/* ── Load related stories ───────────────────── */
 async function loadRelatedStories() {
   try {
-    const res   = await fetch(`${GET_POSTS_URL}?status=published`);
+    const res = await fetch(`${GET_POSTS_URL}?status=published`);
+    if (!res.ok) { initSlider(); return; }
+
     const posts = await res.json();
+    if (!Array.isArray(posts) || posts.length === 0) { initSlider(); return; }
 
-    if (!Array.isArray(posts) || posts.length === 0) {
-      initSlider();
-      return;
-    }
-
-    const related = posts
-      .filter(p => String(p.id) !== String(articleId))
-      .slice(0, 6);
-
-    if (related.length === 0) {
-      initSlider();
-      return;
-    }
+    const related = posts.filter(p => String(p.id) !== String(articleId)).slice(0, 6);
+    if (related.length === 0) { initSlider(); return; }
 
     const track = document.getElementById('sliderTrack');
     track.innerHTML = '';
 
     related.forEach(post => {
-      const imgUrl = resolveImage(post);
+      const imgUrl    = resolveImage(post);
       const thumbHTML = imgUrl
-        ? `<img
-            class="story-thumb"
-            src="${imgUrl}"
-            alt="${post.judul || ''}"
-            onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
-          />${placeholderThumb()}`
+        ? `<img class="story-thumb" src="${imgUrl}" alt="${escapeHTML(post.judul || '')}"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />${placeholderThumb()}`
         : placeholderThumb();
 
       const date = post.created_at
@@ -123,22 +197,20 @@ async function loadRelatedStories() {
         ${thumbHTML}
         <div class="story-body">
           <span class="story-badge">News</span>
-          <div class="story-card-title">${post.judul || 'Untitled'}</div>
-          <div class="story-date">${date}</div>
-          <a href="newsdetail.html?id=${post.id}" class="story-link">Read More →</a>
-        </div>
-      `;
+          <div class="story-card-title">${escapeHTML(post.judul || 'Untitled')}</div>
+          <div class="story-date">${escapeHTML(date)}</div>
+          <a href="newsdetail.html?id=${encodeURIComponent(post.id)}" class="story-link">Read More →</a>
+        </div>`;
       track.appendChild(card);
     });
 
     initSlider();
-
-  } catch (err) {
-    console.error('Gagal memuat related stories:', err);
+  } catch {
     initSlider();
   }
 }
 
+/* ── Slider ─────────────────────────────────── */
 function initSlider() {
   const track         = document.getElementById('sliderTrack');
   const dotsContainer = document.getElementById('sliderDots');
@@ -190,8 +262,8 @@ function initSlider() {
   let startX = 0, isDragging = false, startTranslate = 0;
 
   track.addEventListener('mousedown', e => {
-    isDragging = true;
-    startX = e.clientX;
+    isDragging     = true;
+    startX         = e.clientX;
     startTranslate = -currentIndex * getCardWidth();
     track.classList.add('dragging');
   });
@@ -204,20 +276,20 @@ function initSlider() {
     isDragging = false;
     track.classList.remove('dragging');
     const diff = e.clientX - startX;
-    if (diff < -50) goTo(currentIndex + 1);
-    else if (diff > 50) goTo(currentIndex - 1);
-    else goTo(currentIndex);
+    if (diff < -50)      goTo(currentIndex + 1);
+    else if (diff > 50)  goTo(currentIndex - 1);
+    else                 goTo(currentIndex);
   });
 
   track.addEventListener('touchstart', e => {
-    startX = e.touches[0].clientX;
+    startX         = e.touches[0].clientX;
     startTranslate = -currentIndex * getCardWidth();
   }, { passive: true });
   track.addEventListener('touchend', e => {
     const diff = e.changedTouches[0].clientX - startX;
-    if (diff < -50) goTo(currentIndex + 1);
+    if (diff < -50)     goTo(currentIndex + 1);
     else if (diff > 50) goTo(currentIndex - 1);
-    else goTo(currentIndex);
+    else                goTo(currentIndex);
   });
 
   window.addEventListener('resize', () => {
@@ -229,12 +301,10 @@ function initSlider() {
   buildDots();
 }
 
-loadArticle();
-loadRelatedStories();
-
+/* ── Share buttons ──────────────────────────── */
 (function initShareButtons() {
   const pageUrl = encodeURIComponent(window.location.href);
-  const title = encodeURIComponent(document.title);
+  const title   = encodeURIComponent(document.title);
 
   const fb = document.getElementById('share-facebook');
   const li = document.getElementById('share-linkedin');
@@ -244,3 +314,7 @@ loadRelatedStories();
   if (li) li.href = `https://www.linkedin.com/sharing/share-offsite/?url=${pageUrl}`;
   if (wa) wa.href = `https://api.whatsapp.com/send?text=${title}%20${pageUrl}`;
 })();
+
+/* ── Init ───────────────────────────────────── */
+loadArticle();
+loadRelatedStories();
