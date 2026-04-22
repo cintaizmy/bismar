@@ -5,15 +5,15 @@
 }
 
 :root {
-  --red: #c0392b;
-  --dark-red: #a93226;
+  --red: #9C1C1C;
+  --dark-red: #7a1616;
   --text-dark: #1a1a1a;
   --text-body: #2c2c2c;
   --text-muted: #555;
   --bg-page: #ffffff;
   --bg-card: #ffffff;
   --bg-badge: #f8e4e4;
-  --badge-text: #c0392b;
+  --badge-text: #9C1C1C;
   --border: #e5e5e5;
   --icon-color: #444;
 }

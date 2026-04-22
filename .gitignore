@@ -16,14 +16,16 @@ Desktop.ini
 *.njsproj
 *.sln
 
-# Uploads & user content
+# Uploads & user content (keep folder via .gitkeep, ignore isinya)
 assets/files/
-uploads/
+uploads/*
+!uploads/.gitkeep
 
 # Environment & config
 .env
 .env.local
 config.local.php
+api/db-config.php
 
 # PHP cache
 *.cache

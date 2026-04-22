@@ -1,6 +1,5 @@
-const API_BASE      = 'http://localhost:8888';
-const GET_POSTS_URL = `${API_BASE}/get-posts.php`;
-const UPLOADS_DIR   = `${API_BASE}/uploads/`;
+const GET_POSTS_URL = 'api/get-posts.php';
+const UPLOADS_DIR   = 'uploads/';
 
 const urlParams = new URLSearchParams(window.location.search);
 const articleId = urlParams.get('id');
@@ -126,7 +125,7 @@ async function loadRelatedStories() {
           <span class="story-badge">News</span>
           <div class="story-card-title">${post.judul || 'Untitled'}</div>
           <div class="story-date">${date}</div>
-          <a href="news-detail.html?id=${post.id}" class="story-link">Read More →</a>
+          <a href="newsdetail.html?id=${post.id}" class="story-link">Read More →</a>
         </div>
       `;
       track.appendChild(card);
