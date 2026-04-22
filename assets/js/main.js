@@ -156,7 +156,7 @@ function closePopupOutside(e) {
 /* ══════════════════════════════════════════
    LIGHTBOX
 ══════════════════════════════════════════ */
-const lightboxPhotos = [
+let lightboxPhotos = [
   { src: 'assets/img/galeri_1.jpeg', caption: 'Gallery 1' },
   { src: 'assets/img/galeri_2.jpeg', caption: 'Gallery 2' },
   { src: 'assets/img/galeri_3.jpeg', caption: 'Gallery 3' },
@@ -234,7 +234,7 @@ document.addEventListener('keydown', function(e) {
 /* ══════════════════════════════════════════
    GALLERY POPUP (bottom sheet)
 ══════════════════════════════════════════ */
-const galleryPhotos = [
+let galleryPhotos = [
   { src: 'assets/img/galeri_1.jpeg', ratio: 'r-wide' },
   { src: 'assets/img/galeri_2.jpeg', ratio: 'r-tall' },
   { src: 'assets/img/galeri_3.jpeg', ratio: 'r-land' },
@@ -332,6 +332,46 @@ function scrollNews(dir) {
   document.getElementById('newsTrack').style.transform =
     `translateX(-${newsIndex * getCardWidth()}px)`;
 }
+
+/* ══════════════════════════════════════════
+   GALLERY — DYNAMIC LOAD FROM API
+══════════════════════════════════════════ */
+(async function loadGalleryFromAPI() {
+  try {
+    const res = await fetch('api/get-gallery.php');
+    if (!res.ok) throw new Error();
+    const items = await res.json();
+    if (!Array.isArray(items) || items.length === 0) throw new Error();
+
+    const ratios = ['r-wide','r-tall','r-land','r-square','r-cinema','r-port'];
+
+    lightboxPhotos = items.map((item, i) => ({
+      src:     item.url,
+      caption: item.caption || ('Gallery ' + (i + 1))
+    }));
+
+    galleryPhotos = items.map((item, i) => ({
+      src:   item.url,
+      ratio: ratios[i % ratios.length]
+    }));
+
+    // Reset gallery popup agar batch ulang dari data baru
+    galleryLoaded      = 0;
+    galleryInitialized = false;
+    document.getElementById('galleryMasonry').innerHTML   = '';
+    document.getElementById('galleryLoadHint').textContent = 'Scroll untuk melihat lebih banyak foto ↓';
+
+    // Update 3 gambar di grid utama
+    document.querySelectorAll('.gallery-img img').forEach((img, i) => {
+      if (lightboxPhotos[i]) {
+        img.src = lightboxPhotos[i].src;
+        img.alt = lightboxPhotos[i].caption;
+      }
+    });
+  } catch {
+    // Fallback: gunakan data hardcoded yang sudah ada
+  }
+})();
 
 /* ══════════════════════════════════════════
    NEWS — DYNAMIC LOAD FROM API
