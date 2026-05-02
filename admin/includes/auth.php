@@ -57,12 +57,18 @@ function uploadImage(array $file, string $dir): string {
         throw new RuntimeException('Ukuran file maksimal 5MB.');
     }
 
+    $subdir  = date('Y') . '/' . date('m') . '/';
+    $fullDir = $dir . $subdir;
+    if (!is_dir($fullDir) && !mkdir($fullDir, 0755, true)) {
+        throw new RuntimeException('Gagal membuat direktori upload.');
+    }
+
     $filename = bin2hex(random_bytes(10)) . '.' . $allowed[$mime];
-    if (!move_uploaded_file($file['tmp_name'], $dir . $filename)) {
+    if (!move_uploaded_file($file['tmp_name'], $fullDir . $filename)) {
         throw new RuntimeException('Gagal menyimpan file.');
     }
 
-    return $filename;
+    return $subdir . $filename;
 }
 
 define('BASE_URL', '/bismar/');
