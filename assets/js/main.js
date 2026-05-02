@@ -412,7 +412,7 @@ function escapeHTML(str) {
       a.href      = `newsdetail.html?id=${encodeURIComponent(post.id)}`;
       a.className = 'news-card';
       const imgSrc = post.gambar
-        ? `uploads/berita/${encodeURIComponent(post.gambar)}`
+        ? `uploads/berita/${post.gambar}`
         : (post.gambar_url || '');
       a.innerHTML = `
         <div class="news-img">${imgSrc ? `<img src="${escapeHTML(imgSrc)}" alt="${escapeHTML(post.judul || '')}" loading="lazy">` : ''}</div>
