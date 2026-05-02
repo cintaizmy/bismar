@@ -415,7 +415,7 @@ function escapeHTML(str) {
         ? `uploads/berita/${post.gambar}`
         : (post.gambar_url || '');
       a.innerHTML = `
-        <div class="news-img">${imgSrc ? `<img src="${escapeHTML(imgSrc)}" alt="${escapeHTML(post.judul || '')}" loading="lazy">` : ''}</div>
+        <div class="news-img">${imgSrc ? `<img src="${escapeHTML(imgSrc)}" alt="${escapeHTML(post.judul || '')}">` : ''}</div>
         <span class="news-tag">Berita</span>
         <p class="news-title">${escapeHTML(post.judul || '')}</p>
         <div class="news-meta">
