@@ -22,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verifyCsrf();
 
     $judul  = trim($_POST['judul']  ?? '');
-    $konten = trim($_POST['konten'] ?? '');
+    $konten = trim($_POST['konten'] ?? '');   // TinyMCE akan submit HTML ke sini
     $author = trim($_POST['author'] ?? 'Tim Bismar');
     $status = in_array($_POST['status'] ?? '', ['published', 'draft'])
               ? $_POST['status'] : 'draft';
@@ -59,51 +59,122 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+// ── Helper: bangun URL absolut untuk gambar ─────────────────────────────────
+// Deteksi base URL otomatis → misal http://localhost:8888/bismar
+function imageUrl(string $filename, string $subfolder = 'berita'): string {
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $host   = $_SERVER['HTTP_HOST'];                       // localhost:8888
+    $script = dirname($_SERVER['SCRIPT_NAME']);            // /bismar/admin
+    // Naik satu level dari /admin → /bismar
+    $base   = rtrim(dirname($script), '/');                // /bismar
+    return $scheme . '://' . $host . $base . '/uploads/' . $subfolder . '/' . $filename;
+}
+
+// URL root project untuk TinyMCE image upload handler
+$scheme    = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$host      = $_SERVER['HTTP_HOST'];
+$scriptDir = dirname($_SERVER['SCRIPT_NAME']);             // /bismar/admin
+$baseUrl   = $scheme . '://' . $host . rtrim(dirname($scriptDir), '/'); // http://localhost:8888/bismar
+$uploadHandlerUrl = $baseUrl . '/admin/tinymce-upload.php';
+
 $pageTitle  = $id ? 'Edit Berita' : 'Tambah Berita';
 $activePage = 'berita';
 require_once 'includes/header.php';
 ?>
+
+<!-- TinyMCE via CDN (gratis, no API key untuk self-hosted) -->
+<script src="https://cdn.jsdelivr.net/npm/tinymce@7/tinymce.min.js"></script>
+<script>
+tinymce.init({
+    selector: '#konten',
+    language: 'id',           // Bahasa Indonesia (opsional, perlu file lang)
+    height: 480,
+    menubar: true,
+    plugins: [
+        'advlist', 'autolink', 'lists', 'link', 'image', 'charmap',
+        'preview', 'anchor', 'searchreplace', 'visualblocks', 'code',
+        'fullscreen', 'insertdatetime', 'media', 'table', 'wordcount'
+    ],
+    toolbar:
+        'undo redo | formatselect | bold italic underline strikethrough | ' +
+        'forecolor backcolor | alignleft aligncenter alignright alignjustify | ' +
+        'bullist numlist outdent indent | link image media table | ' +
+        'removeformat code fullscreen',
+
+    // ── Upload gambar langsung dari editor ──────────────────────────────────
+    images_upload_url: '<?= htmlspecialchars($uploadHandlerUrl) ?>',
+    images_upload_credentials: true,
+    automatic_uploads: true,
+    images_reuse_filename: false,   // pakai nama unik agar tidak konflik
+
+    // Konversi path relatif → absolut saat simpan (opsional tapi disarankan)
+    convert_urls: false,
+
+    // Izinkan semua tag HTML (sesuaikan jika perlu sanitasi di server)
+    valid_elements: '*[*]',
+
+    setup: function(editor) {
+        // Pastikan textarea terupdate sebelum form di-submit
+        editor.on('change', function() {
+            editor.save();
+        });
+    }
+});
+</script>
 
 <div style="margin-bottom:20px;">
   <a href="berita.php" class="btn btn-secondary btn-sm">← Kembali</a>
 </div>
 
 <?php if ($error): ?>
-<div class="alert alert-danger"><?= h($error) ?></div>
+<div class="alert alert-danger"><?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?></div>
 <?php endif; ?>
 
 <div class="card">
-  <form method="POST" enctype="multipart/form-data">
-    <input type="hidden" name="csrf" value="<?= h(csrf()) ?>">
+  <form method="POST" enctype="multipart/form-data"
+        onsubmit="tinymce.triggerSave()">
+    <!-- triggerSave() paksa TinyMCE tulis konten ke textarea sebelum submit -->
+
+    <input type="hidden" name="csrf" value="<?= htmlspecialchars(csrf(), ENT_QUOTES, 'UTF-8') ?>">
 
     <div class="form-row">
       <div class="form-group">
         <label for="judul">Judul *</label>
         <input type="text" id="judul" name="judul"
-               value="<?= h($post['judul'] ?? '') ?>" required>
+               value="<?= htmlspecialchars($post['judul'] ?? '', ENT_QUOTES, 'UTF-8') ?>" required>
       </div>
       <div class="form-group">
         <label for="author">Penulis</label>
         <input type="text" id="author" name="author"
-               value="<?= h($post['author'] ?? 'Tim Bismar') ?>">
+               value="<?= htmlspecialchars($post['author'] ?? 'Tim Bismar', ENT_QUOTES, 'UTF-8') ?>">
       </div>
     </div>
 
     <div class="form-group">
       <label for="konten">Konten *</label>
-      <textarea id="konten" name="konten" required><?= h($post['konten'] ?? '') ?></textarea>
-      <p class="form-hint">HTML didukung — gunakan &lt;p&gt;, &lt;h2&gt;, &lt;ul&gt;, &lt;b&gt;, &lt;a&gt;, dll.</p>
+      <!-- TinyMCE akan replace textarea ini dengan editor visual -->
+      <textarea id="konten" name="konten" required><?= htmlspecialchars($post['konten'] ?? '', ENT_QUOTES, 'UTF-8') ?></textarea>
+      <p class="form-hint">Gunakan toolbar di atas untuk memformat teks dan menyisipkan gambar.</p>
     </div>
 
     <div class="form-row">
       <div class="form-group">
-        <label>Gambar Artikel</label>
+        <label>Gambar Utama Artikel</label>
+
         <?php if (!empty($post['gambar'])): ?>
         <div class="img-preview">
-          <img src="../uploads/berita/<?= h($post['gambar']) ?>" alt="Gambar saat ini">
+          <!--
+            ── FIX PATH GAMBAR ─────────────────────────────────────────────
+            Gunakan imageUrl() untuk URL absolut, bukan path relatif ../
+            Path relatif sering gagal karena tergantung lokasi file saat ini.
+          -->
+          <img src="<?= htmlspecialchars(imageUrl($post['gambar']), ENT_QUOTES, 'UTF-8') ?>"
+               alt="Gambar saat ini"
+               style="max-width:300px;max-height:200px;object-fit:cover;border-radius:6px;">
           <p class="form-hint">Gambar saat ini. Upload baru untuk mengganti.</p>
         </div>
         <?php endif; ?>
+
         <input type="file" name="gambar" accept="image/jpeg,image/png,image/webp">
         <p class="form-hint">Maks 5MB · JPG, PNG, WebP</p>
       </div>
@@ -111,8 +182,14 @@ require_once 'includes/header.php';
       <div class="form-group">
         <label for="status">Status</label>
         <select id="status" name="status">
-          <option value="draft"     <?= ($post['status'] ?? 'draft') === 'draft'     ? 'selected' : '' ?>>Draft (tidak tampil di website)</option>
-          <option value="published" <?= ($post['status'] ?? '')       === 'published' ? 'selected' : '' ?>>Published (tampil di website)</option>
+          <option value="draft"
+            <?= ($post['status'] ?? 'draft') === 'draft' ? 'selected' : '' ?>>
+            Draft (tidak tampil di website)
+          </option>
+          <option value="published"
+            <?= ($post['status'] ?? '') === 'published' ? 'selected' : '' ?>>
+            Published (tampil di website)
+          </option>
         </select>
       </div>
     </div>

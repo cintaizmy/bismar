@@ -1,5 +1,5 @@
 const GET_POSTS_URL = 'api/get-posts.php';
-const UPLOADS_DIR   = 'uploads/';
+const UPLOADS_DIR   = 'uploads/berita/';
 
 const urlParams = new URLSearchParams(window.location.search);
 const articleId = urlParams.get('id');
@@ -170,7 +170,7 @@ async function loadRelatedStories() {
     if (!res.ok) { initSlider(); return; }
 
     const posts = await res.json();
-    if (!Array.isArray(posts) || posts.length === 0) { initSlider(); return; }
+    if (!Array.isArray(posts) || posts.length === 0) { linitSlider(); return; }
 
     const related = posts.filter(p => String(p.id) !== String(articleId)).slice(0, 6);
     if (related.length === 0) { initSlider(); return; }
@@ -181,8 +181,7 @@ async function loadRelatedStories() {
     related.forEach(post => {
       const imgUrl    = resolveImage(post);
       const thumbHTML = imgUrl
-        ? `<img class="story-thumb" src="${imgUrl}" alt="${escapeHTML(post.judul || '')}"
-             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';" />${placeholderThumb()}`
+        ? `<img class="story-thumb" src="${escapeHTML(imgUrl)}" alt="${escapeHTML(post.judul || '')}">`
         : placeholderThumb();
 
       const date = post.created_at
