@@ -170,7 +170,7 @@ async function loadRelatedStories() {
     if (!res.ok) { initSlider(); return; }
 
     const posts = await res.json();
-    if (!Array.isArray(posts) || posts.length === 0) { linitSlider(); return; }
+    if (!Array.isArray(posts) || posts.length === 0) { initSlider(); return; }
 
     const related = posts.filter(p => String(p.id) !== String(articleId)).slice(0, 6);
     if (related.length === 0) { initSlider(); return; }
@@ -192,13 +192,15 @@ async function loadRelatedStories() {
 
       const card = document.createElement('div');
       card.className = 'story-card';
+      card.style.cursor = 'pointer';
+      card.dataset.id = post.id;
       card.innerHTML = `
         ${thumbHTML}
         <div class="story-body">
           <span class="story-badge">News</span>
           <div class="story-card-title">${escapeHTML(post.judul || 'Untitled')}</div>
           <div class="story-date">${escapeHTML(date)}</div>
-          <a href="newsdetail.html?id=${encodeURIComponent(post.id)}" class="story-link">Read More →</a>
+          <span class="story-link">Read More →</span>
         </div>`;
       track.appendChild(card);
     });
@@ -229,8 +231,11 @@ function initSlider() {
   oldNext.parentNode.replaceChild(nextBtn, oldNext);
 
   function getCardWidth() {
-    return cards[0] ? cards[0].offsetWidth + 20 : 0;
-  }
+  if (!cards[0]) return 0;
+  const style = window.getComputedStyle(track);
+  const gap = parseFloat(style.gap) || 20;
+  return cards[0].offsetWidth + gap;
+}
 
   function updateDots() {
     dotsContainer.querySelectorAll('.dot').forEach((d, i) => {
@@ -258,18 +263,23 @@ function initSlider() {
   nextBtn.addEventListener('click', () => goTo(currentIndex + 1));
   prevBtn.addEventListener('click', () => goTo(currentIndex - 1));
 
-  let startX = 0, isDragging = false, startTranslate = 0;
+  let startX = 0, isDragging = false, hasDragged = false, startTranslate = 0;
 
   track.addEventListener('mousedown', e => {
     isDragging     = true;
+    hasDragged     = false;
     startX         = e.clientX;
     startTranslate = -currentIndex * getCardWidth();
     track.classList.add('dragging');
   });
+
   document.addEventListener('mousemove', e => {
     if (!isDragging) return;
-    track.style.transform = `translateX(${startTranslate + (e.clientX - startX)}px)`;
+    const diff = e.clientX - startX;
+    if (Math.abs(diff) > 5) hasDragged = true;
+    track.style.transform = `translateX(${startTranslate + diff}px)`;
   });
+
   document.addEventListener('mouseup', e => {
     if (!isDragging) return;
     isDragging = false;
@@ -280,15 +290,38 @@ function initSlider() {
     else                 goTo(currentIndex);
   });
 
+  // ── Event delegation: klik card → navigasi ke artikel ──
+  track.addEventListener('click', e => {
+    if (hasDragged) {
+      hasDragged = false;
+      return;
+    }
+    const card = e.target.closest('.story-card');
+    if (!card || !card.dataset.id) return;
+    window.location.href = `newsdetail.html?id=${encodeURIComponent(card.dataset.id)}`;
+  });
+
   track.addEventListener('touchstart', e => {
     startX         = e.touches[0].clientX;
     startTranslate = -currentIndex * getCardWidth();
+    hasDragged     = false;
   }, { passive: true });
+
+  track.addEventListener('touchmove', e => {
+    if (Math.abs(e.touches[0].clientX - startX) > 5) hasDragged = true;
+  }, { passive: true });
+
   track.addEventListener('touchend', e => {
     const diff = e.changedTouches[0].clientX - startX;
     if (diff < -50)     goTo(currentIndex + 1);
     else if (diff > 50) goTo(currentIndex - 1);
-    else                goTo(currentIndex);
+    else if (!hasDragged) {
+      const card = e.target.closest('.story-card');
+      if (card && card.dataset.id) {
+        window.location.href = `newsdetail.html?id=${encodeURIComponent(card.dataset.id)}`;
+      }
+    }
+    hasDragged = false;
   });
 
   window.addEventListener('resize', () => {

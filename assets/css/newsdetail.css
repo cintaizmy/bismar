@@ -451,6 +451,10 @@ h1.article-title {
   gap: 8px;
 }
 
+.story-link {
+  pointer-events: none; /* biarkan click naik ke card */
+}
+
 /* Dots */
 .slider-dots {
   display: flex;
