@@ -235,7 +235,7 @@ function initSlider() {
   const style = window.getComputedStyle(track);
   const gap = parseFloat(style.gap) || 20;
   return cards[0].offsetWidth + gap;
-}
+}``
 
   function updateDots() {
     dotsContainer.querySelectorAll('.dot').forEach((d, i) => {
