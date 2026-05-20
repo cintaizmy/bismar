@@ -32,28 +32,64 @@ if ($id !== null) {
     );
     $stmt->execute([(int) $id]);
     $post = $stmt->fetch();
-
     if (!$post) jsonError(404, 'Artikel tidak ditemukan');
 
     echo json_encode($post);
     exit;
 }
 
-// GET /api/get-posts.php?status=published — semua artikel
+// GET /api/get-posts.php?status=published&limit=12&offset=0 — dengan pagination
 if ($status !== null) {
     $allowed = ['published', 'draft'];
     if (!in_array($status, $allowed, true)) jsonError(400, 'Status tidak valid');
 
-    $stmt = $db->prepare(
-        'SELECT id, judul, konten, author, gambar, gambar_url, status, created_at
-         FROM posts
-         WHERE status = ?
-         ORDER BY created_at DESC'
-    );
-    $stmt->execute([$status]);
+    // Pagination params
+    $limit  = isset($_GET['limit'])  ? (int) $_GET['limit']  : 0;   // 0 = semua
+    $offset = isset($_GET['offset']) ? (int) $_GET['offset'] : 0;
+
+    if ($limit < 0) $limit  = 0;
+    if ($offset < 0) $offset = 0;
+
+    // Hitung total dulu untuk info hasMore
+    $countStmt = $db->prepare('SELECT COUNT(*) FROM posts WHERE status = ?');
+    $countStmt->execute([$status]);
+    $total = (int) $countStmt->fetchColumn();
+
+    if ($limit > 0) {
+        $stmt = $db->prepare(
+            'SELECT id, judul, konten, author, gambar, gambar_url, status, created_at
+             FROM posts
+             WHERE status = ?
+             ORDER BY created_at DESC
+             LIMIT ? OFFSET ?'
+        );
+        $stmt->execute([$status, $limit, $offset]);
+    } else {
+        // Tanpa limit — ambil semua (untuk backward compatibility)
+        $stmt = $db->prepare(
+            'SELECT id, judul, konten, author, gambar, gambar_url, status, created_at
+             FROM posts
+             WHERE status = ?
+             ORDER BY created_at DESC'
+        );
+        $stmt->execute([$status]);
+    }
+
     $posts = $stmt->fetchAll();
 
-    echo json_encode($posts);
+    // Kalau pakai pagination, wrap dalam objek dengan metadata
+    if ($limit > 0) {
+        echo json_encode([
+            'data'    => $posts,
+            'total'   => $total,
+            'limit'   => $limit,
+            'offset'  => $offset,
+            'hasMore' => ($offset + $limit) < $total,
+        ]);
+    } else {
+        // Backward compatible — langsung array
+        echo json_encode($posts);
+    }
     exit;
 }
 
