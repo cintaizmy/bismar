@@ -359,7 +359,6 @@ require_once __DIR__ . '/api/db-config.php';
       <p class="cta-desc">Let's develop your potential with innovative training programs, industry partnerships, and practical learning experiences from Bismar Education.</p>
       <div class="cta-buttons">
         <a href="https://wa.me/6281234567890" target="_blank" rel="noopener noreferrer" class="btn-cta-primary">Start Free Consultation</a>
-        <a href="assets/files/katalog-bismar.pdf" target="_blank" rel="noopener noreferrer" class="btn-cta-secondary">Unduh Katalog</a>
       </div>
     </div>
   </section>
