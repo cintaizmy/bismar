@@ -76,111 +76,19 @@ require_once __DIR__ . '/api/db-config.php';
     </div>
   </section>
 
-  <!-- PROGRAMS SECTION — HARDCODED -->
+  <!-- PROGRAMS SECTION — DYNAMIC -->
+
+
   <section class="programs-section" id="programs">
+
     <h2 class="programs-heading">Programs That<br>Shape Your Growth</h2>
+
     <div class="programs-slider-wrapper">
       <div class="programs-track" id="programsTrack">
-
-        <!-- PAGE 1 -->
-        <div class="programs-page">
-          <div class="program-card" onclick="openPopup(0)">
-            <div class="card-header">
-              <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M3 3h18v4H3z"/><path d="M5 7v13h14V7"/><path d="M10 12h4"/></svg></div>
-              <span class="card-title">SMK PK Partner Perdagangan</span>
-            </div>
-            <p class="card-desc">Kemitraan resmi SMK bidang perdagangan dengan simulasi bisnis dan mentoring praktisi industri.</p>
-            <div class="card-arrow"><div class="arrow-box"><svg viewBox="0 0 14 14"><line x1="3" y1="11" x2="11" y2="3"/><polyline points="5,3 11,3 11,9"/></svg></div></div>
-          </div>
-          <div class="program-card" onclick="openPopup(1)">
-            <div class="card-header">
-              <div class="card-icon"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg></div>
-              <span class="card-title">Pendampingan Pembukaan Usaha</span>
-            </div>
-            <p class="card-desc">Bimbingan merintis usaha mandiri: rencana bisnis, perizinan, permodalan, hingga pemasaran digital.</p>
-            <div class="card-arrow"><div class="arrow-box"><svg viewBox="0 0 14 14"><line x1="3" y1="11" x2="11" y2="3"/><polyline points="5,3 11,3 11,9"/></svg></div></div>
-          </div>
-          <div class="program-card" onclick="openPopup(2)">
-            <div class="card-header">
-              <div class="card-icon"><svg viewBox="0 0 24 24"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="16" y1="11" x2="22" y2="11"/></svg></div>
-              <span class="card-title">Recruitment</span>
-            </div>
-            <p class="card-desc">Menghubungkan lulusan SMK terbaik dengan perusahaan mitra melalui seleksi terstruktur dan transparan.</p>
-            <div class="card-arrow"><div class="arrow-box"><svg viewBox="0 0 14 14"><line x1="3" y1="11" x2="11" y2="3"/><polyline points="5,3 11,3 11,9"/></svg></div></div>
-          </div>
-          <div class="program-card" onclick="openPopup(3)">
-            <div class="card-header">
-              <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-              <span class="card-title">Workshop</span>
-            </div>
-            <p class="card-desc">Pelatihan intensif berbasis praktik yang dipandu praktisi industri aktif selama 1–3 hari.</p>
-            <div class="card-arrow"><div class="arrow-box"><svg viewBox="0 0 14 14"><line x1="3" y1="11" x2="11" y2="3"/><polyline points="5,3 11,3 11,9"/></svg></div></div>
-          </div>
-          <div class="program-card" onclick="openPopup(4)">
-            <div class="card-header">
-              <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"/><path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14"/></svg></div>
-              <span class="card-title">Sinkronisasi Kurikulum</span>
-            </div>
-            <p class="card-desc">Penyelarasan kurikulum SMK dengan kebutuhan industri untuk memastikan kompetensi lulusan relevan.</p>
-            <div class="card-arrow"><div class="arrow-box"><svg viewBox="0 0 14 14"><line x1="3" y1="11" x2="11" y2="3"/><polyline points="5,3 11,3 11,9"/></svg></div></div>
-          </div>
-          <div class="program-card" onclick="openPopup(5)">
-            <div class="card-header">
-              <div class="card-icon"><svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><circle cx="12" cy="10" r="3"/><path d="M7 21l5-3 5 3"/></svg></div>
-              <span class="card-title">Sertifikasi Kompetensi Guru</span>
-            </div>
-            <p class="card-desc">Uji kompetensi dan sertifikasi guru SMK sesuai standar LSP, diakui oleh dunia industri.</p>
-            <div class="card-arrow"><div class="arrow-box"><svg viewBox="0 0 14 14"><line x1="3" y1="11" x2="11" y2="3"/><polyline points="5,3 11,3 11,9"/></svg></div></div>
-          </div>
-        </div>
-
-        <!-- PAGE 2 -->
-        <div class="programs-page">
-          <div class="program-card" onclick="openPopup(6)">
-            <div class="card-header">
-              <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></div>
-              <span class="card-title">Kelas Entrepreneur</span>
-            </div>
-            <p class="card-desc">Menumbuhkan jiwa wirausaha siswa melalui simulasi bisnis, pitching ide, dan mentoring langsung.</p>
-            <div class="card-arrow"><div class="arrow-box"><svg viewBox="0 0 14 14"><line x1="3" y1="11" x2="11" y2="3"/><polyline points="5,3 11,3 11,9"/></svg></div></div>
-          </div>
-          <div class="program-card" onclick="openPopup(7)">
-            <div class="card-header">
-              <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg></div>
-              <span class="card-title">Pendamping UKK</span>
-            </div>
-            <p class="card-desc">Pendampingan intensif persiapan Uji Kompetensi Keahlian oleh asesor berpengalaman.</p>
-            <div class="card-arrow"><div class="arrow-box"><svg viewBox="0 0 14 14"><line x1="3" y1="11" x2="11" y2="3"/><polyline points="5,3 11,3 11,9"/></svg></div></div>
-          </div>
-          <div class="program-card" onclick="openPopup(8)">
-            <div class="card-header">
-              <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></div>
-              <span class="card-title">Industri Mengajar</span>
-            </div>
-            <p class="card-desc">Profesional industri hadir langsung ke kelas sebagai pengajar tamu untuk berbagi pengalaman nyata.</p>
-            <div class="card-arrow"><div class="arrow-box"><svg viewBox="0 0 14 14"><line x1="3" y1="11" x2="11" y2="3"/><polyline points="5,3 11,3 11,9"/></svg></div></div>
-          </div>
-          <div class="program-card" onclick="openPopup(9)">
-            <div class="card-header">
-              <div class="card-icon"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
-              <span class="card-title">Guru Magang</span>
-            </div>
-            <p class="card-desc">Guru SMK magang di perusahaan mitra untuk memperbarui wawasan dan keterampilan industri terkini.</p>
-            <div class="card-arrow"><div class="arrow-box"><svg viewBox="0 0 14 14"><line x1="3" y1="11" x2="11" y2="3"/><polyline points="5,3 11,3 11,9"/></svg></div></div>
-          </div>
-          <div class="program-card" onclick="openPopup(10)">
-            <div class="card-header">
-              <div class="card-icon"><svg viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><polyline points="12,12 12,16"/><polyline points="10,14 14,14"/></svg></div>
-              <span class="card-title">Praktek Lapangan Kerja</span>
-            </div>
-            <p class="card-desc">PKL terstruktur di perusahaan mitra dengan mentor industri dan portofolio kompetensi untuk melamar kerja.</p>
-            <div class="card-arrow"><div class="arrow-box"><svg viewBox="0 0 14 14"><line x1="3" y1="11" x2="11" y2="3"/><polyline points="5,3 11,3 11,9"/></svg></div></div>
-          </div>
-          <div style="visibility:hidden; pointer-events:none;" class="program-card"></div>
-        </div>
-
+        <!-- diisi oleh main.js via fetch API -->
       </div>
     </div>
+
     <div class="programs-nav">
       <div class="programs-dots" id="programsDots"></div>
       <div class="programs-nav-btns">
@@ -192,9 +100,11 @@ require_once __DIR__ . '/api/db-config.php';
         </button>
       </div>
     </div>
+
   </section>
 
   <!-- PROGRAM POPUP -->
+  <!-- Popup tetap sama, tidak perlu diubah -->
   <div class="popup-overlay" id="popupOverlay" onclick="closePopupOutside(event)">
     <div class="popup-box" id="popupBox">
       <button class="popup-close" onclick="closePopup()">
@@ -206,7 +116,6 @@ require_once __DIR__ . '/api/db-config.php';
       <p class="popup-body" id="popupBody"></p>
     </div>
   </div>
-
   <!-- STEPS TO PARTNER SECTION -->
   <section class="steps-section" id="partnership">
     <h2 class="steps-heading">Steps to Partner<br>With Us</h2>

@@ -48,6 +48,13 @@ $activePage ??= '';
       </svg>
       Galeri
     </a>
+    <a href="<?= h(BASE_URL) ?>admin/programs.php" class="sidebar-link <?= $activePage === 'programs' ? 'active' : '' ?>">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+<path d="M4 6h16M4 10h16M4 14h8M4 18h8"/>
+<rect x="14" y="12" width="8" height="8" rx="1"/>
+</svg>
+      Programs
+</a>
   </nav>
 
   <div class="sidebar-footer">

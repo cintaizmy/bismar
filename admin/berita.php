@@ -5,7 +5,7 @@ require_once __DIR__ . '/../api/db-config.php';
 
 $db    = getDB();
 $posts = $db->query(
-    'SELECT id, judul, author, status, created_at FROM posts ORDER BY created_at DESC'
+    'SELECT id, judul, author, status, created_at, gambar FROM posts ORDER BY created_at DESC'
 )->fetchAll();
 
 $pageTitle  = 'Berita';
