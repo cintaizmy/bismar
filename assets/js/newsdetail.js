@@ -1,10 +1,25 @@
-const GET_POSTS_URL = 'api/get-posts.php';
-const UPLOADS_DIR   = 'uploads/berita/';
+const GET_POSTS_URL = '/bismar/api/get-posts.php';
+const UPLOADS_DIR   = '/bismar/uploads/berita/';
 
-const urlParams = new URLSearchParams(window.location.search);
-const articleId = urlParams.get('id');
+/* ── Baca identifier dari URL ───────────────────────────────────────────── */
+const _params     = new URLSearchParams(window.location.search);
+const articleId   = _params.get('id');
+let articleSlug   = _params.get('slug');
 
-/* ── HTML Sanitizer ─────────────────────────────────────────────────────────*/
+if (!articleSlug) {
+  try {
+    const path = window.location.pathname.replace(/\/+$/, '');
+    const parts = path.split('/').filter(Boolean);
+    const last = parts[parts.length - 1] || '';
+    if (last && !last.includes('.') && last !== 'bismar' && last !== 'index.php' && last !== 'newsdetail.html') {
+      articleSlug = decodeURIComponent(last);
+    }
+  } catch (e) {
+    articleSlug = null;
+  }
+}
+
+/* ── HTML Sanitizer ─────────────────────────────────────────────────────── */
 function sanitizeHTML(html) {
   const SAFE_TAGS = new Set([
     'p','br','b','strong','i','em','u','s',
@@ -52,7 +67,7 @@ function sanitizeHTML(html) {
   return out.innerHTML;
 }
 
-/* ── Escape helper ──────────────────────────── */
+/* ── Escape helper ──────────────────────────────────────────────────────── */
 function escapeHTML(str) {
   return String(str)
     .replace(/&/g, '&amp;')
@@ -61,7 +76,7 @@ function escapeHTML(str) {
     .replace(/"/g, '&quot;');
 }
 
-/* ── Article UI state ───────────────────────── */
+/* ── Article UI state ───────────────────────────────────────────────────── */
 function setArticleState(state, message) {
   document.getElementById('article-loading').classList.toggle('hidden', state !== 'loading');
   document.getElementById('article-error').classList.toggle('hidden',   state !== 'error');
@@ -71,7 +86,7 @@ function setArticleState(state, message) {
   }
 }
 
-/* ── Image helpers ──────────────────────────── */
+/* ── Image helpers ──────────────────────────────────────────────────────── */
 function resolveImage(post) {
   if (post.gambar_url?.trim()) return post.gambar_url;
   if (post.gambar?.trim())     return UPLOADS_DIR + post.gambar;
@@ -102,19 +117,41 @@ function placeholderThumb() {
     </div>`;
 }
 
-/* ── Load article ───────────────────────────── */
+/* ── Load article ───────────────────────────────────────────────────────── */
 async function loadArticle() {
-  if (!articleId) return;
+  if (!articleId && !articleSlug) {
+    setArticleState('error', 'Artikel tidak ditemukan.');
+    return;
+  }
   setArticleState('loading');
 
   try {
-    const res = await fetch(`${GET_POSTS_URL}?id=${encodeURIComponent(articleId)}`);
+    const query = articleSlug
+        ? `slug=${encodeURIComponent(clientSlugify(articleSlug))}`
+      : `id=${encodeURIComponent(articleId)}`;
+
+    const res = await fetch(`${GET_POSTS_URL}?${query}`);
     if (res.status === 404) { setArticleState('error', 'Artikel tidak ditemukan.'); return; }
-    if (!res.ok)            { setArticleState('error', 'Terjadi kesalahan server.'); return; }
+    if (!res.ok) {
+      try {
+        const err = await res.json();
+        setArticleState('error', err.error || 'Terjadi kesalahan server.');
+      } catch {
+        setArticleState('error', 'Terjadi kesalahan server.');
+      }
+      return;
+    }
 
     const data = await res.json();
     const post = Array.isArray(data) ? data[0] : data;
     if (!post) { setArticleState('error', 'Artikel tidak ditemukan.'); return; }
+
+    if (post.slug) {
+      const prettyUrl = `/bismar/${post.slug}`;
+      if (window.location.pathname + window.location.search !== prettyUrl) {
+        history.replaceState({ id: post.id, slug: post.slug }, post.judul || '', prettyUrl);
+      }
+    }
 
     if (post.judul) document.title = post.judul + ' | Bismar Education';
 
@@ -128,8 +165,12 @@ async function loadArticle() {
       });
     }
 
-    const authorEl = document.getElementById('article-author');
-    if (authorEl && post.author) authorEl.textContent = post.author;
+    const authorEl   = document.getElementById('article-author');
+    const authorMeta = document.getElementById('author-meta');
+    if (authorEl && post.author) {
+      authorEl.textContent = post.author;
+      if (authorMeta) authorMeta.style.display = 'flex';
+    }
 
     const bodyEl = document.getElementById('article-body');
     if (bodyEl && post.konten) {
@@ -140,6 +181,7 @@ async function loadArticle() {
     }
 
     renderHero(resolveImage(post));
+    updateShareButtons();
     setArticleState('ready');
 
   } catch {
@@ -147,17 +189,29 @@ async function loadArticle() {
   }
 }
 
+  // Client-side slugify to match server `toSlug()` behavior (basic)
+  function clientSlugify(str) {
+    if (!str) return '';
+    // Normalize, remove diacritics
+    try { str = str.normalize('NFKD').replace(/\p{Diacritic}/gu, ''); } catch (e) {}
+    str = String(str).toLowerCase().trim();
+    // Remove invalid chars, keep a-z0-9 and spaces and dashes
+    str = str.replace(/[^a-z0-9\s-]/g, '');
+    str = str.replace(/\s+/g, '-');
+    str = str.replace(/-+/g, '-');
+    return str;
+  }
+
 /* ══════════════════════════════════════════
-   RELATED STORIES — INFINITE SCROLL
-   Load 9 artikel per batch.
-   Saat slider mendekati ujung kanan,
-   otomatis fetch batch berikutnya.
+   RELATED STORIES
 ══════════════════════════════════════════ */
 const RELATED_LIMIT = 9;
-let relatedOffset   = 0;
-let relatedHasMore  = true;
-let relatedLoading  = false;
-let sliderInstance  = null; // simpan referensi slider agar bisa direbuild
+let relatedOffset  = 0;
+let relatedHasMore = true;
+let relatedLoading = false;
+
+const currentId   = articleId;
+const currentSlug = articleSlug;
 
 function createStoryCard(post) {
   const imgUrl    = resolveImage(post);
@@ -175,6 +229,7 @@ function createStoryCard(post) {
   card.className    = 'story-card';
   card.style.cursor = 'pointer';
   card.dataset.id   = post.id;
+  card.dataset.slug = post.slug || '';
   card.innerHTML = `
     ${thumbHTML}
     <div class="story-body">
@@ -200,10 +255,14 @@ async function fetchRelatedBatch() {
     if (!res.ok) throw new Error();
 
     const json  = await res.json();
-    const posts = (json.data ?? []).filter(p => String(p.id) !== String(articleId));
+    const posts = (json.data ?? []).filter(p => {
+      if (currentId   && String(p.id) === String(currentId))   return false;
+      if (currentSlug && p.slug       === currentSlug)          return false;
+      return true;
+    });
 
     relatedHasMore  = json.hasMore ?? false;
-    relatedOffset  += (json.data ?? []).length; // offset naik sejumlah total fetch, bukan setelah filter
+    relatedOffset  += (json.data ?? []).length;
 
     posts.forEach(post => {
       track.appendChild(createStoryCard(post));
@@ -222,29 +281,25 @@ async function loadRelatedStories() {
   const track = document.getElementById('sliderTrack');
   track.innerHTML = '';
 
-  await fetchRelatedBatch();
-
-  if (track.querySelectorAll('.story-card').length === 0) {
-    initSlider();
-    return;
+  // Fetch semua batch dulu sebelum init slider
+  while (relatedHasMore) {
+    await fetchRelatedBatch();
   }
 
   initSlider();
 }
 
-/* ── Slider ─────────────────────────────────── */
+/* ── Slider ─────────────────────────────────────────────────────────────── */
 function initSlider() {
-  const track         = document.getElementById('sliderTrack');
-  const dotsContainer = document.getElementById('sliderDots');
-  const cards         = track.querySelectorAll('.story-card');
-  const totalCards    = cards.length;
+  const track          = document.getElementById('sliderTrack');
+  const progressFill   = document.getElementById('sliderProgress');
 
   const visibleCards = () => window.innerWidth <= 600 ? 1 : 3;
-  const maxIndex     = () => Math.max(0, track.querySelectorAll('.story-card').length - visibleCards());
+  const totalCards   = () => track.querySelectorAll('.story-card').length;
+  const maxIndex     = () => Math.max(0, totalCards() - visibleCards());
 
   let currentIndex = 0;
 
-  // Clone tombol untuk hapus event listener lama
   const oldPrev = document.getElementById('prevBtn');
   const oldNext = document.getElementById('nextBtn');
   const prevBtn = oldPrev.cloneNode(true);
@@ -259,40 +314,30 @@ function initSlider() {
     return c.offsetWidth + gap;
   }
 
-  function updateDots() {
-    dotsContainer.querySelectorAll('.dot').forEach((d, i) => {
-      d.classList.toggle('active', i === currentIndex);
-    });
+function updateProgress() {
+  const max = maxIndex();
+  if (!progressFill) return;
+
+  if (max === 0) {
+    progressFill.style.width = '100%';
+    return;
   }
 
-  function buildDots() {
-    dotsContainer.innerHTML = '';
-    const total = maxIndex() + 1;
-    for (let i = 0; i < total; i++) {
-      const dot = document.createElement('div');
-      dot.className = 'dot' + (i === currentIndex ? ' active' : '');
-      dot.addEventListener('click', () => goTo(i));
-      dotsContainer.appendChild(dot);
-    }
-  }
+  const pct = ((currentIndex + visibleCards()) / totalCards()) * 100;
+  progressFill.style.width = Math.min(pct, 100) + '%';
+}
 
-  async function goTo(index) {
+  function goTo(index) {
     const max = maxIndex();
     currentIndex = Math.max(0, Math.min(index, max));
     track.style.transform = `translateX(-${currentIndex * getCardWidth()}px)`;
-    updateDots();
-
-    // Mendekati ujung kanan → load lebih
-    if (currentIndex >= max - 2 && relatedHasMore && !relatedLoading) {
-      await fetchRelatedBatch();
-      buildDots(); // rebuild dots karena jumlah card bertambah
-    }
+    updateProgress();
   }
 
   nextBtn.addEventListener('click', () => goTo(currentIndex + 1));
   prevBtn.addEventListener('click', () => goTo(currentIndex - 1));
 
-  // Drag (mouse)
+  // ── Drag (mouse) ──────────────────────────────────────────────────────
   let startX = 0, isDragging = false, hasDragged = false, startTranslate = 0;
 
   track.addEventListener('mousedown', e => {
@@ -319,15 +364,19 @@ function initSlider() {
     else                goTo(currentIndex);
   });
 
-  // Klik card → navigasi ke artikel
+  // ── Klik card → navigasi ──────────────────────────────────────────────
   track.addEventListener('click', e => {
     if (hasDragged) { hasDragged = false; return; }
     const card = e.target.closest('.story-card');
-    if (!card || !card.dataset.id) return;
-    window.location.href = `newsdetail.html?id=${encodeURIComponent(card.dataset.id)}`;
+    if (!card) return;
+    if (card.dataset.slug) {
+      window.location.href = `/bismar/${encodeURIComponent(card.dataset.slug)}`;
+    } else if (card.dataset.id) {
+      window.location.href = `newsdetail.html?id=${encodeURIComponent(card.dataset.id)}`;
+    }
   });
 
-  // Touch
+  // ── Touch ─────────────────────────────────────────────────────────────
   track.addEventListener('touchstart', e => {
     startX         = e.touches[0].clientX;
     startTranslate = -currentIndex * getCardWidth();
@@ -344,7 +393,10 @@ function initSlider() {
     else if (diff > 50) goTo(currentIndex - 1);
     else if (!hasDragged) {
       const card = e.target.closest('.story-card');
-      if (card && card.dataset.id) {
+      if (!card) return;
+      if (card.dataset.slug) {
+        window.location.href = `/bismar/${encodeURIComponent(card.dataset.slug)}`;
+      } else if (card.dataset.id) {
         window.location.href = `newsdetail.html?id=${encodeURIComponent(card.dataset.id)}`;
       }
     }
@@ -353,16 +405,14 @@ function initSlider() {
 
   window.addEventListener('resize', () => {
     currentIndex = 0;
-    buildDots();
     goTo(0);
   });
 
-  buildDots();
   goTo(0);
 }
 
-/* ── Share buttons ──────────────────────────── */
-(function initShareButtons() {
+/* ── Share buttons ──────────────────────────────────────────────────────── */
+function updateShareButtons() {
   const pageUrl = encodeURIComponent(window.location.href);
   const title   = encodeURIComponent(document.title);
 
@@ -373,8 +423,10 @@ function initSlider() {
   if (fb) fb.href = `https://www.facebook.com/sharer/sharer.php?u=${pageUrl}`;
   if (li) li.href = `https://www.linkedin.com/sharing/share-offsite/?url=${pageUrl}`;
   if (wa) wa.href = `https://api.whatsapp.com/send?text=${title}%20${pageUrl}`;
-})();
+}
 
-/* ── Init ───────────────────────────────────── */
+updateShareButtons();
+
+/* ── Init ───────────────────────────────────────────────────────────────── */
 loadArticle();
 loadRelatedStories();
