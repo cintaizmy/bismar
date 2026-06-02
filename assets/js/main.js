@@ -321,22 +321,14 @@ document.addEventListener('keydown', function(e) {
    GALLERY POPUP (bottom sheet)
 ══════════════════════════════════════════ */
 let galleryPhotos = [
-  { src: 'assets/img/galeri_1.jpeg', ratio: 'r-wide' },
-  { src: 'assets/img/galeri_2.jpeg', ratio: 'r-tall' },
-  { src: 'assets/img/galeri_3.jpeg', ratio: 'r-land' },
-  { src: 'assets/img/galeri_4.jpeg', ratio: 'r-square' },
-  { src: 'assets/img/galeri_5.jpeg', ratio: 'r-cinema' },
-  { src: 'assets/img/galeri_6.jpeg', ratio: 'r-port' },
-  { src: 'assets/img/galeri_1.jpeg', ratio: 'r-land' },
-  { src: 'assets/img/galeri_2.jpeg', ratio: 'r-square' },
-  { src: 'assets/img/galeri_3.jpeg', ratio: 'r-wide' },
-  { src: 'assets/img/galeri_4.jpeg', ratio: 'r-tall' },
-  { src: 'assets/img/galeri_5.jpeg', ratio: 'r-land' },
-  { src: 'assets/img/galeri_6.jpeg', ratio: 'r-port' },
+  { src: 'assets/img/galeri_1.jpeg' },
+  { src: 'assets/img/galeri_2.jpeg' },
+  { src: 'assets/img/galeri_3.jpeg' },
+  { src: 'assets/img/galeri_4.jpeg' },
+  { src: 'assets/img/galeri_5.jpeg' },
+  { src: 'assets/img/galeri_6.jpeg' },
 ];
 
-let galleryLoaded      = 0;
-const BATCH_SIZE       = 4;
 let galleryInitialized = false;
 
 function openGalleryPopup() {
@@ -344,7 +336,7 @@ function openGalleryPopup() {
   overlay.classList.add('active');
   document.body.style.overflow = 'hidden';
   if (!galleryInitialized) {
-    loadGalleryBatch();
+    renderGalleryAll();
     galleryInitialized = true;
   }
 }
@@ -358,17 +350,15 @@ function handleGalleryOverlayClick(e) {
   if (e.target === document.getElementById('galleryPopupOverlay')) closeGalleryPopup();
 }
 
-function loadGalleryBatch() {
+function renderGalleryAll() {
   const masonry = document.getElementById('galleryMasonry');
-  const hint    = document.getElementById('galleryLoadHint');
-  const end     = Math.min(galleryLoaded + BATCH_SIZE, galleryPhotos.length);
+  masonry.innerHTML = '';
 
-  for (let i = galleryLoaded; i < end; i++) {
-    const photo = galleryPhotos[i];
-    const div   = document.createElement('div');
-    div.className = 'gallery-masonry-item ' + photo.ratio;
+  galleryPhotos.forEach((photo, i) => {
+    const div = document.createElement('div');
+    div.className = 'gallery-masonry-item';
 
-    const img   = document.createElement('img');
+    const img = document.createElement('img');
     img.src     = photo.src;
     img.alt     = 'Gallery photo ' + (i + 1);
     img.loading = 'lazy';
@@ -376,28 +366,14 @@ function loadGalleryBatch() {
     div.appendChild(img);
 
     const lbIndex = i % lightboxPhotos.length;
-    div.addEventListener('click', function() {
+    div.addEventListener('click', function () {
       closeGalleryPopup();
       setTimeout(() => openLightbox(lbIndex), 320);
     });
 
     masonry.appendChild(div);
-  }
-
-  galleryLoaded = end;
-
-  if (galleryLoaded >= galleryPhotos.length) {
-    hint.textContent = 'Semua ' + galleryPhotos.length + ' foto sudah ditampilkan ✓';
-  }
+  });
 }
-
-document.getElementById('galleryPopupBody').addEventListener('scroll', function () {
-  if (galleryLoaded >= galleryPhotos.length) return;
-  const { scrollTop, scrollHeight, clientHeight } = this;
-  if (scrollTop + clientHeight >= scrollHeight - 120) {
-    loadGalleryBatch();
-  }
-});
 
 /* ══════════════════════════════════════════
    GALLERY — DYNAMIC LOAD FROM API
@@ -409,22 +385,15 @@ document.getElementById('galleryPopupBody').addEventListener('scroll', function 
     const items = await res.json();
     if (!Array.isArray(items) || items.length === 0) throw new Error();
 
-    const ratios = ['r-wide','r-tall','r-land','r-square','r-cinema','r-port'];
-
     lightboxPhotos = items.map((item, i) => ({
       src:     item.url,
       caption: item.caption || ('Gallery ' + (i + 1))
     }));
 
-    galleryPhotos = items.map((item, i) => ({
-      src:   item.url,
-      ratio: ratios[i % ratios.length]
-    }));
+    galleryPhotos = items.map(item => ({ src: item.url }));
 
-    galleryLoaded      = 0;
     galleryInitialized = false;
-    document.getElementById('galleryMasonry').innerHTML   = '';
-    document.getElementById('galleryLoadHint').textContent = 'Scroll untuk melihat lebih banyak foto ↓';
+    document.getElementById('galleryMasonry').innerHTML = '';
 
     document.querySelectorAll('.gallery-img img').forEach((img, i) => {
       if (lightboxPhotos[i]) {
