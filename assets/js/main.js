@@ -89,7 +89,6 @@ function renderProgramsTrack(programs) {
 
     chunk.forEach(p => page.appendChild(buildProgramCard(p)));
 
-    // Isi sisa slot biar grid tetap rapi
     const rem = chunk.length % CARDS_PER_PAGE;
     if (rem !== 0) {
       for (let f = 0; f < CARDS_PER_PAGE - rem; f++) {
@@ -136,7 +135,7 @@ function initProgramsSlider() {
   goToPage(0);
 }
 
-/* ── Entry point ── */
+/* ── Entry point programs ── */
 (async function loadPrograms() {
   try {
     const res = await fetch('/bismar/api/get-programs.php');
@@ -158,9 +157,11 @@ function initProgramsSlider() {
 })();
 
 /* ══════════════════════════════════════════
-   HERO CAROUSEL
+   HERO CAROUSEL — dynamic dari API gallery
 ══════════════════════════════════════════ */
-(function () {
+
+// Pisah setup carousel dari fetch, agar bisa dipanggil setelah slides ter-render
+function setupHeroCarousel() {
   const INTERVAL = 3000;
   const track    = document.getElementById('carouselTrack');
   const dotsWrap = document.getElementById('carouselDots');
@@ -170,6 +171,10 @@ function initProgramsSlider() {
   let current    = 0;
   let timer      = null;
 
+  if (total === 0) return; // Tidak ada slide, skip
+
+  // Buat dots
+  dotsWrap.innerHTML = '';
   slides.forEach((_, i) => {
     const dot = document.createElement('button');
     dot.className = 'carousel-dot' + (i === 0 ? ' active' : '');
@@ -237,6 +242,38 @@ function initProgramsSlider() {
 
   resetTimer();
   startProgress();
+}
+
+// Fetch gallery dari API, render slides, lalu init carousel
+(async function initHeroCarousel() {
+  const track = document.getElementById('carouselTrack');
+
+  try {
+    const res = await fetch('api/get-gallery-carousel.php');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+
+    const items = await res.json();
+    if (!Array.isArray(items) || items.length === 0) throw new Error('empty');
+
+    // Render slides dari data API
+    track.innerHTML = items.map(item => `
+      <div class="carousel-slide">
+        <img src="${item.url}" alt="${item.caption ? item.caption.replace(/"/g, '&quot;') : 'Gallery'}">
+      </div>
+    `).join('');
+
+  } catch (err) {
+    console.warn('[Hero Carousel] Gagal load dari API, pakai fallback:', err);
+    // Fallback: slide statis kalau API gagal
+    track.innerHTML = `
+      <div class="carousel-slide"><img src="assets/img/galeri_1.jpeg" alt="Gallery 1"></div>
+      <div class="carousel-slide"><img src="assets/img/galeri_2.jpeg" alt="Gallery 2"></div>
+      <div class="carousel-slide"><img src="assets/img/galeri_3.jpeg" alt="Gallery 3"></div>
+    `;
+  }
+
+  // Setup carousel setelah slides ada di DOM
+  setupHeroCarousel();
 })();
 
 /* ══════════════════════════════════════════
@@ -377,6 +414,8 @@ function renderGalleryAll() {
 
 /* ══════════════════════════════════════════
    GALLERY — DYNAMIC LOAD FROM API
+   (update lightbox, gallery popup, dan
+    3 gambar preview di section gallery)
 ══════════════════════════════════════════ */
 (async function loadGalleryFromAPI() {
   try {
@@ -395,6 +434,7 @@ function renderGalleryAll() {
     galleryInitialized = false;
     document.getElementById('galleryMasonry').innerHTML = '';
 
+    // Update 3 gambar preview di section gallery
     document.querySelectorAll('.gallery-img img').forEach((img, i) => {
       if (lightboxPhotos[i]) {
         img.src = lightboxPhotos[i].src;
@@ -408,9 +448,6 @@ function renderGalleryAll() {
 
 /* ══════════════════════════════════════════
    NEWS — INFINITE SCROLL
-   Load 12 artikel pertama saat halaman dibuka.
-   Saat user scroll ke ujung kanan slider,
-   otomatis fetch 12 artikel berikutnya.
 ══════════════════════════════════════════ */
 function escapeHTML(str) {
   return String(str)
@@ -442,7 +479,6 @@ function scrollNews(dir) {
   newsIndex = Math.max(0, Math.min(newsIndex + dir, maxIndex));
   track.style.transform = `translateX(-${newsIndex * getCardWidth()}px)`;
 
-  // Mendekati ujung → load lebih
   if (newsIndex >= maxIndex - 2 && newsHasMore && !newsLoading) {
     loadMoreNews();
   }
@@ -481,7 +517,6 @@ async function loadMoreNews() {
 
   const track = document.getElementById('newsTrack');
 
-  // Skeleton sementara
   const skeletons = Array.from({ length: 3 }, () => {
     const el = document.createElement('a');
     el.className = 'news-card news-skeleton';
@@ -513,12 +548,10 @@ async function loadMoreNews() {
   newsLoading = false;
 }
 
-// Init: load batch pertama
 (async function initNews() {
   const track = document.getElementById('newsTrack');
   if (!track) return;
 
-  // Skeleton awal
   track.innerHTML = Array.from({ length: 4 }, () =>
     '<a class="news-card news-skeleton" aria-hidden="true" tabindex="-1"></a>'
   ).join('');

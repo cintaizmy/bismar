@@ -45,27 +45,22 @@ require_once __DIR__ . '/api/db-config.php';
     </div>
   </section>
 
-  <!-- HERO CAROUSEL -->
-  <div class="hero-image-wrapper">
-    <div class="hero-carousel" id="heroCarousel">
-      <div class="carousel-track" id="carouselTrack">
-        <div class="carousel-slide"><img src="assets/img/galeri_1.jpeg" alt="Gallery 1"></div>
-        <div class="carousel-slide"><img src="assets/img/galeri_2.jpeg" alt="Gallery 2"></div>
-        <div class="carousel-slide"><img src="assets/img/galeri_3.jpeg" alt="Gallery 3"></div>
-        <div class="carousel-slide"><img src="assets/img/galeri_4.jpeg" alt="Gallery 4"></div>
-        <div class="carousel-slide"><img src="assets/img/galeri_5.jpeg" alt="Gallery 5"></div>
-        <div class="carousel-slide"><img src="assets/img/galeri_6.jpeg" alt="Gallery 6"></div>
-      </div>
-      <button class="carousel-btn prev" id="carouselPrev" aria-label="Previous">
-        <svg viewBox="0 0 24 24"><polyline points="15,18 9,12 15,6"/></svg>
-      </button>
-      <button class="carousel-btn next" id="carouselNext" aria-label="Next">
-        <svg viewBox="0 0 24 24"><polyline points="9,18 15,12 9,6"/></svg>
-      </button>
-      <div class="carousel-dots" id="carouselDots"></div>
-      <div class="carousel-progress" id="carouselProgress"></div>
+<!-- HERO CAROUSEL -->
+<div class="hero-image-wrapper">
+  <div class="hero-carousel" id="heroCarousel">
+    <div class="carousel-track" id="carouselTrack">
+      <!-- diisi oleh main.js via fetch API -->
     </div>
+    <button class="carousel-btn prev" id="carouselPrev" aria-label="Previous">
+      <svg viewBox="0 0 24 24"><polyline points="15,18 9,12 15,6"/></svg>
+    </button>
+    <button class="carousel-btn next" id="carouselNext" aria-label="Next">
+      <svg viewBox="0 0 24 24"><polyline points="9,18 15,12 9,6"/></svg>
+    </button>
+    <div class="carousel-dots" id="carouselDots"></div>
+    <div class="carousel-progress" id="carouselProgress"></div>
   </div>
+</div>
 
   <!-- ABOUT SECTION -->
   <section class="about-section" id="tentang">
